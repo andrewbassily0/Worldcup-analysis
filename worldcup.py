@@ -1,21 +1,38 @@
 from bs4 import BeautifulSoup
 import requests
+import pandas as pd
+import csv
+
+year =[1930,1934,1938,1942,1946,1950,1954,1958,1962,1966,1970,
+       1974,1978,1982,1986,1990,1994,1998,2002,2006,2010,2014,
+       2018,2022]
+       
+def get_matches(year):
+    web_link = f"https://en.wikipedia.org/wiki/{year}_FIFA_World_Cup"
+    web = requests.get(web_link)
+    content = web.content
+    soup = BeautifulSoup(content , 'lxml')
 
 
+    matches= soup.find_all("div", class_="footballbox")
 
-web_link = "https://en.wikipedia.org/wiki/1930_FIFA_World_Cup"
-web = requests.get(web_link)
-content = web.content
-soup = BeautifulSoup(content , 'lxml')
+    home =[]
+    score =[]
+    away =[]
+
+    for match in matches:
+        home.append(match.find("th",class_="fhome").get_text())
+        score.append(match.find("th",class_="fscore").get_text())
+        away.append(match.find("th",class_="faway").get_text())
 
 
-matches= soup.find_all("div", class_="footballbox")
+    football={'home':home , 'score':score , 'away':away}
 
-home =[]
-score =[]
-away =[]
+    df_football= pd.DataFrame(football)
+    df_football['year'] = year
+    return df_football
 
-for match in matches:
-    home = home.append(match.find("th",class_="fhome").get_text())
-    score = score.append(match.find("th",class_="fscore").get_text())
-    away = away.append(match.find("th",class_="faway").get_text())
+fifa = [get_matches(year)for year in year]
+df_fifa = pd.concat(fifa , ignore_index=False)
+
+df_fifa.to_csv('fifa.csv', index=False)
